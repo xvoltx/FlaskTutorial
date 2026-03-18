@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flask & SQLite — Lezione Introduttiva</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Sora:wght@300;400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5f7fa;
+    --surface: #ffffff;
+    --surface2: #eef1f6;
+    --border: #d6dbe6;
+    --accent: #0a8c5f;
+    --accent2: #2d5fe0;
+    --accent3: #d93030;
+    --text: #1a1d26;
+    --muted: #6b7280;
+    --code-bg: #1e2133;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Sora', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.75;
+    font-size: 16px;
+  }
+
+  /* --- HEADER --- */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 60px;
+  }
+  .logo {
+    font-weight: 800;
+    font-size: 1.1rem;
+    letter-spacing: -0.5px;
+  }
+  .logo span { color: var(--accent); }
+  nav { display: flex; gap: 1.5rem; }
+  nav a {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: color .2s;
+  }
+  nav a:hover { color: var(--accent); }
+
+  /* --- HERO --- */
+  .hero {
+    padding: 5rem 2rem 3rem;
+    max-width: 860px;
+    margin: 0 auto;
+  }
+  .tag {
+    display: inline-block;
+    background: rgba(10,140,95,.1);
+    color: var(--accent);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: .3rem .8rem;
+    border-radius: 100px;
+    border: 1px solid rgba(10,140,95,.25);
+    margin-bottom: 1.5rem;
+  }
+  h1 {
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -1px;
+    margin-bottom: 1.2rem;
+  }
+  h1 em { color: var(--accent); font-style: normal; }
+  .hero-sub {
+    color: var(--muted);
+    font-size: 1.1rem;
+    font-weight: 300;
+    max-width: 600px;
+    margin-bottom: 2.5rem;
+  }
+
+  .pills { display: flex; gap: .7rem; flex-wrap: wrap; }
+  .pill {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: .35rem .9rem;
+    font-size: .8rem;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .pill.green { color: var(--accent); border-color: rgba(10,140,95,.35); }
+  .pill.blue  { color: var(--accent2); border-color: rgba(45,95,224,.35); }
+
+  /* --- LAYOUT --- */
+  .main { max-width: 860px; margin: 0 auto; padding: 0 2rem 4rem; }
+
+  /* --- SECTION --- */
+  .section {
+    margin-top: 3.5rem;
+    padding-top: 3.5rem;
+    border-top: 1px solid var(--border);
+  }
+  .section-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .75rem;
+    color: var(--accent);
+    font-weight: 700;
+    letter-spacing: 1px;
+    margin-bottom: .5rem;
+  }
+  h2 {
+    font-size: 1.7rem;
+    font-weight: 800;
+    letter-spacing: -.5px;
+    margin-bottom: 1rem;
+  }
+  h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--accent2);
+    margin: 2rem 0 .7rem;
+  }
+  p { color: #3a3f4d; margin-bottom: 1rem; }
+
+  /* --- CODE BLOCKS --- */
+  .code-wrap {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 1.2rem 0;
+    position: relative;
+  }
+  .code-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: .6rem 1rem;
+    background: rgba(255,255,255,.04);
+    border-bottom: 1px solid var(--border);
+  }
+  .code-lang {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .7rem;
+    color: var(--accent);
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .code-filename {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .7rem;
+    color: var(--muted);
+  }
+  pre {
+    padding: 1.2rem 1.4rem;
+    overflow-x: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .82rem;
+    line-height: 1.8;
+    color: #e8ecf0;
+  }
+  code { font-family: 'JetBrains Mono', monospace; }
+  .inline-code {
+    background: rgba(45,95,224,.1);
+    color: var(--accent2);
+    padding: .1rem .4rem;
+    border-radius: 4px;
+    font-size: .88em;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* Syntax highlight colors */
+  .kw  { color: #ff79c6; }
+  .fn  { color: #8be9fd; }
+  .str { color: #f1fa8c; }
+  .cm  { color: #6272a4; font-style: italic; }
+  .dec { color: #50fa7b; }
+  .num { color: #bd93f9; }
+  .var { color: #f8f8f2; }
+  .op  { color: #ff6b6b; }
+
+  /* --- CALLOUTS --- */
+  .callout {
+    border-left: 3px solid var(--accent);
+    background: rgba(10,140,95,.07);
+    border-radius: 0 8px 8px 0;
+    padding: 1rem 1.2rem;
+    margin: 1.2rem 0;
+  }
+  .callout.blue {
+    border-color: var(--accent2);
+    background: rgba(45,95,224,.07);
+  }
+  .callout.red {
+    border-color: var(--accent3);
+    background: rgba(217,48,48,.07);
+  }
+  .callout-title {
+    font-size: .75rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: .4rem;
+    color: var(--accent);
+  }
+  .callout.blue .callout-title { color: var(--accent2); }
+  .callout.red  .callout-title { color: var(--accent3); }
+  .callout p { margin: 0; font-size: .93rem; }
+
+  /* --- SCHEMA DIAGRAM --- */
+  .schema {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .8rem;
+  }
+  .schema-title {
+    color: var(--accent);
+    font-weight: 700;
+    font-size: .7rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+  }
+  .flow {
+    display: flex;
+    align-items: center;
+    gap: .8rem;
+    flex-wrap: wrap;
+  }
+  .flow-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: .5rem 1rem;
+    text-align: center;
+    min-width: 100px;
+  }
+  .flow-box .label { color: var(--muted); font-size: .65rem; margin-bottom: .2rem; }
+  .flow-box .name  { font-weight: 700; font-size: .85rem; }
+  .flow-arrow { color: var(--accent); font-size: 1.2rem; }
+
+  /* --- STEPS --- */
+  .steps { counter-reset: step; margin: 1.5rem 0; }
+  .step {
+    counter-increment: step;
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    align-items: flex-start;
+  }
+  .step-num {
+    background: var(--accent);
+    color: #000;
+    font-weight: 800;
+    font-size: .85rem;
+    min-width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: .2rem;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .step-content h4 { font-size: .95rem; font-weight: 700; margin-bottom: .3rem; }
+  .step-content p { margin: 0; font-size: .9rem; }
+
+  /* --- TABLE --- */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.2rem 0;
+    font-size: .88rem;
+  }
+  th {
+    background: var(--surface2);
+    color: var(--accent);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .72rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: .7rem 1rem;
+    text-align: left;
+    border: 1px solid var(--border);
+  }
+  td {
+    padding: .65rem 1rem;
+    border: 1px solid var(--border);
+    color: #3a3f4d;
+  }
+  tr:nth-child(even) td { background: rgba(0,0,0,.02); }
+
+  /* --- TREE --- */
+  .tree {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.4rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .82rem;
+    line-height: 2;
+    color: #e8ecf0;
+  }
+  .tree .dir  { color: #8be9fd; font-weight: 700; }
+  .tree .file { color: #e8ecf0; }
+  .tree .note { color: #00e5a0; }
+
+  /* --- EXERCISE --- */
+  .exercise {
+    background: var(--surface2);
+    border: 1px solid rgba(45,95,224,.25);
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin: 2rem 0;
+  }
+  .exercise-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    background: rgba(45,95,224,.1);
+    color: var(--accent2);
+    font-size: .7rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: .3rem .8rem;
+    border-radius: 100px;
+    margin-bottom: 1rem;
+  }
+  .exercise h4 { font-size: 1rem; font-weight: 700; margin-bottom: .5rem; }
+  .exercise ul { padding-left: 1.4rem; color: #3a3f4d; font-size: .93rem; }
+  .exercise li { margin-bottom: .4rem; }
+
+  /* --- FOOTER --- */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 2rem;
+    text-align: center;
+    color: var(--muted);
+    font-size: .82rem;
+    margin-top: 4rem;
+  }
+
+  /* --- PROGRESS BAR --- */
+  .progress-bar {
+    position: fixed;
+    top: 60px;
+    left: 0;
+    width: 0%;
+    height: 2px;
+    background: var(--accent);
+    transition: width .1s;
+    z-index: 99;
+  }
+
+  /* --- TABS (Jinja) --- */
+  .tabs { display: flex; gap: .5rem; margin-bottom: 0; }
+  .tab-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-bottom: none;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .78rem;
+    padding: .5rem 1rem;
+    cursor: pointer;
+    border-radius: 6px 6px 0 0;
+    transition: all .2s;
+  }
+  .tab-btn.active { background: var(--code-bg); color: var(--accent); border-color: var(--border); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+  .tab-content .code-wrap { border-radius: 0 10px 10px 10px; margin-top: 0; }
+
+  @media (max-width: 600px) {
+    nav { display: none; }
+    h1 { font-size: 1.8rem; }
+    .flow { flex-direction: column; }
+    .flow-arrow { transform: rotate(90deg); }
+  }
+</style>
+</head>
+<body>
+
+<div class="progress-bar" id="progress"></div>
+
+<header>
+  <div class="logo">flask<span>.py</span></div>
+  <nav>
+    <a href="#intro">Intro</a>
+    <a href="#setup">Setup</a>
+    <a href="#routing">Routing</a>
+    <a href="#templates">Template</a>
+    <a href="#forms">Form HTML</a>
+    <a href="#database">Database</a>
+    <a href="#progetto">Progetto</a>
+  </nav>
+</header>
+
+<div class="hero">
+  <div class="tag">📚 Quarta Superiore · Informatica</div>
+  <h1>Costruiamo una<br><em>web app dinamica</em><br>con Flask e SQLite</h1>
+  <p class="hero-sub">Collegare Python, HTML e un database in poche righe di codice. Tutto quello che già sai, finalmente insieme.</p>
+  <div class="pills">
+    <span class="pill green">Python ✓</span>
+    <span class="pill green">HTML/CSS ✓</span>
+    <span class="pill green">sqlite3 ✓</span>
+    <span class="pill blue">→ Flask NEW</span>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- ============ SEZIONE 1 ============ -->
+  <section class="section" id="intro">
+    <div class="section-num">01 / INTRODUZIONE</div>
+    <h2>Cos'è Flask e perché usarlo?</h2>
+
+    <p>Fino ad ora hai scritto script Python che girano sul tuo computer, e pagine HTML statiche che non fanno nulla da sole. Con <strong>Flask</strong> le due cose si incontrano: Python diventa il "cervello" che risponde alle richieste del browser e gli manda pagine HTML generate al momento.</p>
+
+    <div class="schema">
+      <div class="schema-title">🔄 Come funziona una richiesta web</div>
+      <div class="flow" style="align-items:center; gap: 0;">
+
+        <div class="flow-box">
+          <div class="label">UTENTE</div>
+          <div class="name">Browser</div>
+        </div>
+
+        <!-- frecce browser ↔ flask -->
+        <div style="display:flex; flex-direction:column; align-items:center; gap:4px; padding: 0 .6rem; font-family:'JetBrains Mono',monospace; font-size:.72rem; color: var(--muted);">
+          <span>chiede la pagina →</span>
+          <span style="color:var(--accent);">← riceve l'HTML</span>
+        </div>
+
+        <div class="flow-box" style="border-color: rgba(10,140,95,.4)">
+          <div class="label">SERVER</div>
+          <div class="name" style="color:var(--accent)">Flask (Python)</div>
+        </div>
+
+        <!-- frecce flask ↔ db -->
+        <div style="display:flex; flex-direction:column; align-items:center; gap:4px; padding: 0 .6rem; font-family:'JetBrains Mono',monospace; font-size:.72rem; color: var(--muted);">
+          <span>legge/scrive →</span>
+          <span>← dati</span>
+        </div>
+
+        <div class="flow-box">
+          <div class="label">DATI</div>
+          <div class="name">SQLite DB</div>
+        </div>
+
+      </div>
+    </div>
+
+    <p>Flask è un <strong>microframework</strong>. Un <em>framework</em> è una raccolta di codice già scritto che ti risparmia il lavoro di partire da zero — come un kit di montaggio invece di costruire i pezzi uno per uno. Il prefisso <em>micro</em> significa che Flask è volutamente piccolo e semplice: ti dà solo l'essenziale per far funzionare un sito web, senza importi decine di regole su come organizzare il progetto. Puoi aggiungere solo quello che ti serve, quando ti serve.</p>
+
+    <div class="callout">
+      <div class="callout-title">💡 Analogia</div>
+      <p>Pensa a Flask come al cameriere di un ristorante: riceve l'ordine del cliente (la richiesta HTTP), va in cucina (Python + SQLite), e porta indietro il piatto (la pagina HTML).</p>
+    </div>
+
+  </section>
+
+  <!-- ============ SEZIONE 2 ============ -->
+  <section class="section" id="setup">
+    <div class="section-num">02 / SETUP</div>
+    <h2>Installazione e struttura del progetto</h2>
+
+    <h3>Installare Flask</h3>
+    <p>Apri il terminale e digita:</p>
+
+    <div class="code-wrap">
+      <div class="code-header">
+        <span class="code-lang">bash</span>
+        <span class="code-filename">terminale</span>
+      </div>
+      <pre><span class="cm"># Installa Flask con pip</span>
+pip install flask
+
+<span class="cm"># Verifica l'installazione</span>
+flask --version</pre>
+    </div>
+
+    <h3>Struttura delle cartelle</h3>
+    <p>Crea questa struttura nella tua cartella di lavoro. Flask si aspetta che i file HTML siano nella cartella <span class="inline-code">templates/</span> e che i file CSS (e JavaScript) siano nella cartella <span class="inline-code">static/</span>. Non puoi mettere il CSS dove vuoi: se non sta in <span class="inline-code">static/</span>, Flask non riuscirà a trovarlo.</p>
+
+    <div class="tree">
+      <div><span class="dir">mia_app/</span></div>
+      <div>&nbsp;&nbsp;├── <span class="file">app.py</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># il tuo server Flask</span></div>
+      <div>&nbsp;&nbsp;├── <span class="file">database.db</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># creato automaticamente all'avvio</span></div>
+      <div>&nbsp;&nbsp;├── <span class="dir">templates/</span></div>
+      <div>&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;└── <span class="file">index.html</span> &nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># la tua pagina HTML</span></div>
+      <div>&nbsp;&nbsp;└── <span class="dir">static/</span></div>
+      <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└── <span class="file">style.css</span> &nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># il tuo foglio di stile</span></div>
+    </div>
+
+    <div class="callout">
+      <div class="callout-title">💡 Come collegare il CSS nell'HTML</div>
+      <p>Non usare un percorso relativo normale come <span class="inline-code">href="static/style.css"</span>. Flask mette a disposizione la funzione <span class="inline-code">url_for</span> proprio per questo: scrivi <span class="inline-code">href="{{ url_for('static', filename='style.css') }}"</span> nel tag <span class="inline-code">&lt;link&gt;</span> del tuo HTML. Flask calcolerà il percorso corretto in automatico.</p>
+    </div>
+  </section>
+
+  <!-- ============ SEZIONE 3 ============ -->
+  <section class="section" id="routing">
+    <div class="section-num">03 / ROUTING</div>
+    <h2>Il tuo primo server Flask</h2>
+
+    <p>Il concetto centrale di Flask è il <strong>route</strong> (percorso): collega un indirizzo URL a una funzione Python. Quando il browser visita quell'indirizzo, Flask esegue la funzione e ne restituisce il risultato.</p>
+
+    <h3>Esempio 1: due rotte semplici</h3>
+    <p>Ogni <span class="inline-code">@app.route</span> associa un URL a una funzione. Puoi avere quante rotte vuoi nello stesso file.</p>
+
+    <div class="code-wrap">
+      <div class="code-header">
+        <span class="code-lang">python</span>
+        <span class="code-filename">app.py</span>
+      </div>
+      <pre><span class="kw">from</span> <span class="var">flask</span> <span class="kw">import</span> <span class="fn">Flask</span>
+
+<span class="cm"># Crea l'applicazione Flask</span>
+<span class="var">app</span> <span class="op">=</span> <span class="fn">Flask</span>(<span class="var">__name__</span>)
+
+<span class="cm"># Risponde a http://127.0.0.1:5000/</span>
+<span class="dec">@app.route</span>(<span class="str">"/"</span>)
+<span class="kw">def</span> <span class="fn">home</span>():
+    <span class="kw">return</span> <span class="str">"&lt;h1&gt;Benvenuto nella home!&lt;/h1&gt;"</span>
+
+<span class="cm"># Risponde a http://127.0.0.1:5000/altra-pagina</span>
+<span class="dec">@app.route</span>(<span class="str">"/altra-pagina"</span>)
+<span class="kw">def</span> <span class="fn">altra_pagina</span>():
+    <span class="kw">return</span> <span class="str">"&lt;p&gt;Questa è un'altra pagina.&lt;/p&gt;"</span>
+
+<span class="cm"># Questo blocco viene eseguito solo quando lanci direttamente</span>
+<span class="cm"># il file con "python app.py". Serve ad avviare il server.</span>
+<span class="kw">if</span> <span class="var">__name__</span> <span class="op">==</span> <span class="str">"__main__"</span>:
+    <span class="cm"># debug=True: ricarica automatico quando modifichi il codice</span>
+    <span class="var">app</span>.<span class="fn">run</span>(<span class="var">debug</span><span class="op">=</span><span class="kw">True</span>)</pre>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <h4>Avvia il server</h4>
+          <p>Nel terminale, dalla cartella del progetto: <span class="inline-code">python app.py</span> — oppure esegui direttamente il file da VS Code con il tasto ▶</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <h4>Apri il browser</h4>
+          <p>Vai su <span class="inline-code">http://127.0.0.1:5000/</span> e vedrai la home. Poi prova <span class="inline-code">http://127.0.0.1:5000/altra-pagina</span>.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout red">
+      <div class="callout-title">⚠️ Attenzione</div>
+      <p>Il server Flask gira solo sul tuo computer: nessun altro in internet può vederlo. Il <span class="inline-code">127.0.0.1</span> (o <span class="inline-code">localhost</span>) è sempre "questa macchina". È perfetto per sviluppare!</p>
+    </div>
+
+    <h3>Esempio 2: URL con variabile</h3>
+    <p>Puoi inserire una parte variabile nell'URL scrivendola tra parentesi angolari: <span class="inline-code">&lt;nome&gt;</span>. Flask cattura quel pezzo dell'indirizzo e lo passa automaticamente alla funzione come parametro.</p>
+
+    <div class="code-wrap">
+      <div class="code-header">
+        <span class="code-lang">python</span>
+        <span class="code-filename">app.py</span>
+      </div>
+      <pre><span class="cm"># &lt;nome&gt; nell'URL diventa un parametro della funzione</span>
+<span class="dec">@app.route</span>(<span class="str">"/saluta/&lt;nome&gt;"</span>)
+<span class="kw">def</span> <span class="fn">saluta</span>(<span class="var">nome</span>):
+    <span class="kw">return</span> <span class="str">f"&lt;p&gt;Ciao, {nome}!&lt;/p&gt;"</span></pre>
+    </div>
+
+    <p>Visitando <span class="inline-code">/saluta/Marco</span> il browser mostra <em>Ciao, Marco!</em>. Visitando <span class="inline-code">/saluta/Giulia</span> mostra <em>Ciao, Giulia!</em>. La stessa funzione risponde a infiniti URL diversi.</p>
+
+    <div class="callout">
+      <div class="callout-title">💡 A cosa serve?</div>
+      <p>Le variabili nell'URL tornano utili quando vuoi una pagina per ogni elemento del database — ad esempio <span class="inline-code">/studente/3</span> per mostrare i dettagli dello studente con id 3. Lo vedrai nell'esercizio 2.</p>
+    </div>
+
+    <h3>GET e POST: i due metodi che userai</h3>
+    <p>Ogni richiesta HTTP ha un <strong>metodo</strong> che indica l'intenzione del browser. Per ora ti bastano questi due — li incontrerai nella sezione Database quando aggiungerai il form per inserire dati.</p>
+    <table>
+      <tr><th>Metodo</th><th>Cosa fa</th><th>Quando si usa</th></tr>
+      <tr><td><code class="inline-code">GET</code></td><td>Chiede una risorsa al server</td><td>Aprire una pagina, cliccare un link</td></tr>
+      <tr><td><code class="inline-code">POST</code></td><td>Invia dati al server</td><td>Inviare un form, aggiungere un record</td></tr>
+    </table>
+    <p>Di default, <span class="inline-code">@app.route</span> risponde solo a <span class="inline-code">GET</span>. Per accettare anche <span class="inline-code">POST</span> devi scriverlo esplicitamente: <span class="inline-code">@app.route("/aggiungi", methods=["POST"])</span> — lo vedrai in azione nella sezione 5.</p>
+  </section>
+
+
+
+
+  <!-- ============ SEZIONE 4 ============ -->
+  <section class="section" id="templates">
+    <div class="section-num">04 / TEMPLATE</div>
+    <h2>Separare Python dall'HTML con render_template</h2>
+
+    <p>Finora hai visto che una funzione Flask può restituire una stringa HTML scritta direttamente in Python. Funziona, ma diventa scomodo non appena la pagina cresce: mescolare codice Python e tag HTML nella stessa stringa è difficile da leggere e modificare.</p>
+
+    <p>La soluzione è usare <strong><span class="inline-code">render_template</span></strong>, una funzione già inclusa in Flask che devi importare esplicitamente: invece di costruire l'HTML in Python, scrivi un normale file <span class="inline-code">.html</span> nella cartella <span class="inline-code">templates/</span> e dici a Flask di caricarlo. Puoi anche passargli delle variabili Python che verranno inserite nell'HTML.</p>
+
+    <div class="callout blue">
+      <div class="callout-title">📌 La regola</div>
+      <p>Flask cerca automaticamente i file HTML dentro la cartella <span class="inline-code">templates/</span>. Basta mettere lì i tuoi file e chiamarli con <span class="inline-code">render_template("nomefile.html")</span>.</p>
+    </div>
+
+    <h3>Esempio 3: passare una lista da Python a HTML</h3>
+
+    <p>Vogliamo mostrare in una tabella HTML una lista di studenti, ognuno con nome e voto. In Python rappresentiamo ogni studente come un <strong>dizionario</strong> con due chiavi: <span class="inline-code">"nome"</span> e <span class="inline-code">"voto"</span>. Le chiavi sono semplicemente le etichette con cui poi accediamo ai dati nel template — avremmo potuto chiamarle in qualunque modo, ma <em>nome</em> e <em>voto</em> rendono il codice leggibile. L'insieme di tutti gli studenti è una <strong>lista di dizionari</strong>.</p>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(this,'t1')">app.py</button>
+      <button class="tab-btn" onclick="switchTab(this,'t2')">index.html</button>
+    </div>
+
+    <div id="t1" class="tab-content active">
+      <div class="code-wrap">
+        <div class="code-header">
+          <span class="code-lang">python</span>
+          <span class="code-filename">app.py</span>
+        </div>
+        <pre><span class="kw">from</span> <span class="var">flask</span> <span class="kw">import</span> <span class="fn">Flask</span>, <span class="fn">render_template</span>  <span class="cm"># NB: importiamo anche render_template</span>
+
+<span class="var">app</span> <span class="op">=</span> <span class="fn">Flask</span>(<span class="var">__name__</span>)
+
+<span class="dec">@app.route</span>(<span class="str">"/"</span>)
+<span class="kw">def</span> <span class="fn">home</span>():
+    <span class="cm"># Una lista di dizionari: ogni dizionario è uno studente.</span>
+    <span class="cm"># "nome" e "voto" sono le chiavi con cui accederemo ai dati nel template.</span>
+    <span class="var">lista_studenti</span> <span class="op">=</span> [
+        {<span class="str">"nome"</span>: <span class="str">"Giulia"</span>, <span class="str">"voto"</span>: <span class="num">8</span>},
+        {<span class="str">"nome"</span>: <span class="str">"Marco"</span>,  <span class="str">"voto"</span>: <span class="num">7</span>},
+        {<span class="str">"nome"</span>: <span class="str">"Sara"</span>,   <span class="str">"voto"</span>: <span class="num">9</span>},
+    ]
+    <span class="cm"># render_template carica index.html e gli passa i dati.</span>
+    <span class="cm"># "studenti" (a sinistra del =) è il nome con cui il template</span>
+    <span class="cm"># vedrà la variabile. "lista_studenti" (a destra) è la variabile</span>
+    <span class="cm"># Python definita qui sopra.</span>
+    <span class="kw">return</span> <span class="fn">render_template</span>(<span class="str">"index.html"</span>, <span class="var">studenti</span><span class="op">=</span><span class="var">lista_studenti</span>)
+
+<span class="kw">if</span> <span class="var">__name__</span> <span class="op">==</span> <span class="str">"__main__"</span>:
+    <span class="var">app</span>.<span class="fn">run</span>(<span class="var">debug</span><span class="op">=</span><span class="kw">True</span>)</pre>
+      </div>
+    </div>
+
+    <div id="t2" class="tab-content">
+      <div class="code-wrap">
+        <div class="code-header">
+          <span class="code-lang">html + jinja2</span>
+          <span class="code-filename">templates/index.html</span>
+        </div>
+        <pre><span class="op">&lt;!</span><span class="kw">DOCTYPE</span> html<span class="op">&gt;</span>
+<span class="op">&lt;</span><span class="kw">html</span> lang=<span class="str">"it"</span><span class="op">&gt;</span>
+<span class="op">&lt;</span><span class="kw">head</span><span class="op">&gt;&lt;</span><span class="kw">meta</span> charset=<span class="str">"UTF-8"</span><span class="op">&gt;&lt;</span><span class="kw">title</span><span class="op">&gt;</span>Studenti<span class="op">&lt;/</span><span class="kw">title</span><span class="op">&gt;&lt;/</span><span class="kw">head</span><span class="op">&gt;</span>
+<span class="op">&lt;</span><span class="kw">body</span><span class="op">&gt;</span>
+  <span class="op">&lt;</span><span class="kw">h1</span><span class="op">&gt;</span>Lista studenti<span class="op">&lt;/</span><span class="kw">h1</span><span class="op">&gt;</span>
+  <span class="op">&lt;</span><span class="kw">table</span><span class="op">&gt;</span>
+    <span class="op">&lt;</span><span class="kw">tr</span><span class="op">&gt;&lt;</span><span class="kw">th</span><span class="op">&gt;</span>Nome<span class="op">&lt;/</span><span class="kw">th</span><span class="op">&gt;&lt;</span><span class="kw">th</span><span class="op">&gt;</span>Voto<span class="op">&lt;/</span><span class="kw">th</span><span class="op">&gt;&lt;/</span><span class="kw">tr</span><span class="op">&gt;</span>
+
+    <span class="cm">&lt;!-- per ogni studente passato da Python, crea una riga --&gt;</span>
+    {% for s in studenti %}
+    <span class="op">&lt;</span><span class="kw">tr</span><span class="op">&gt;</span>
+      <span class="op">&lt;</span><span class="kw">td</span><span class="op">&gt;</span>{{ s.nome }}<span class="op">&lt;/</span><span class="kw">td</span><span class="op">&gt;</span>
+      <span class="op">&lt;</span><span class="kw">td</span><span class="op">&gt;</span>{{ s.voto }}<span class="op">&lt;/</span><span class="kw">td</span><span class="op">&gt;</span>
+    <span class="op">&lt;/</span><span class="kw">tr</span><span class="op">&gt;</span>
+    {% endfor %}
+  <span class="op">&lt;/</span><span class="kw">table</span><span class="op">&gt;</span>
+<span class="op">&lt;/</span><span class="kw">body</span><span class="op">&gt;</span>
+<span class="op">&lt;/</span><span class="kw">html</span><span class="op">&gt;</span></pre>
+      </div>
+    </div>
+
+    <h3>La sintassi Jinja2 in breve</h3>
+    <p>Dentro i file HTML nella cartella <span class="inline-code">templates/</span> puoi usare due tipi di tag speciali:</p>
+    <table>
+      <tr><th>Sintassi</th><th>Significato</th><th>Esempio</th></tr>
+      <tr><td><code class="inline-code">{{ ... }}</code></td><td>Stampa il valore di una variabile</td><td><code class="inline-code">{{ s.nome }}</code></td></tr>
+      <tr><td><code class="inline-code">{% ... %}</code></td><td>Esegue logica (for, if…)</td><td><code class="inline-code">{% for s in studenti %}</code></td></tr>
+    </table>
+
+    <div class="callout">
+      <div class="callout-title">💡 Vantaggio</div>
+      <p>Con <span class="inline-code">render_template</span> l'HTML rimane un file separato che puoi modificare con tutta la comodità di VS Code — con evidenziazione, autocompletamento e anteprima — senza toccare il codice Python.</p>
+    </div>
+  </section>
+
+
+  <section class="section" id="forms">
+    <div class="section-num">05 / FORM HTML</div>
+    <h2>Raccogliere dati dall'utente con i form</h2>
+
+    <p>Un <strong>form</strong> HTML è il modo con cui una pagina web raccoglie input dall'utente — testo digitato, numeri, scelte — e li invia al server. Lo riconosci dal tag <span class="inline-code">&lt;form&gt;</span>. È lo strumento che userai nell'esempio 5 per aggiungere uno studente al database.</p>
+
+    <h3>Gli attributi fondamentali di un form</h3>
+    <table>
+      <tr><th>Attributo</th><th>A cosa serve</th><th>Esempio</th></tr>
+      <tr><td><code class="inline-code">action</code></td><td>L'URL a cui inviare i dati quando si preme il bottone</td><td><code class="inline-code">action="/aggiungi"</code></td></tr>
+      <tr><td><code class="inline-code">method</code></td><td>Il metodo HTTP da usare: <code class="inline-code">get</code> o <code class="inline-code">post</code></td><td><code class="inline-code">method="post"</code></td></tr>
+      <tr><td><code class="inline-code">name</code></td><td>Il nome del campo: Flask lo usa per recuperare il valore con <code class="inline-code">request.form["nome"]</code></td><td><code class="inline-code">name="nome"</code></td></tr>
+    </table>
+
+    <div class="callout">
+      <div class="callout-title">💡 method="post" o method="get"?</div>
+      <p>Usa <span class="inline-code">post</span> quando invii dati che modificano qualcosa (aggiungere, eliminare, salvare). Usa <span class="inline-code">get</span> per le ricerche, dove i dati possono stare nell'URL senza problemi.</p>
+    </div>
+
+    <h3>I campi più comuni</h3>
+    <table>
+      <tr><th>Tag</th><th>A cosa serve</th></tr>
+      <tr><td><code class="inline-code">&lt;input type="text"&gt;</code></td><td>Campo di testo a riga singola</td></tr>
+      <tr><td><code class="inline-code">&lt;input type="number"&gt;</code></td><td>Campo numerico (con frecce su/giù)</td></tr>
+      <tr><td><code class="inline-code">&lt;input type="email"&gt;</code></td><td>Campo email (valida il formato automaticamente)</td></tr>
+      <tr><td><code class="inline-code">&lt;button type="submit"&gt;</code></td><td>Bottone che invia il form</td></tr>
+    </table>
+
+    <h3>Esempio 4: il form per aggiungere uno studente</h3>
+    <p>Questo è il form che useremo nella sezione successiva per aggiungere uno studente. Nota l'attributo <span class="inline-code">name</span> su ogni campo: è il nome con cui Flask recupererà il valore in Python con <span class="inline-code">request.form["..."]</span>. L'attributo <span class="inline-code">required</span> impedisce di inviare il form se il campo è vuoto.</p>
+
+    <div class="code-wrap">
+      <div class="code-header">
+        <span class="code-lang">html</span>
+        <span class="code-filename">frammento di index.html</span>
+      </div>
+      <pre><span class="cm">&lt;!-- action="/aggiungi": quando si preme il bottone, i dati --&gt;</span>
+<span class="cm">&lt;!-- vengono inviati alla rotta /aggiungi di Flask           --&gt;</span>
+<span class="cm">&lt;!-- method="post": i dati viaggiano nel corpo della richiesta, --&gt;</span>
+<span class="cm">&lt;!-- non nell'URL                                            --&gt;</span>
+<span class="op">&lt;</span><span class="kw">form</span> action=<span class="str">"/aggiungi"</span> method=<span class="str">"post"</span><span class="op">&gt;</span>
+
+  <span class="cm">&lt;!-- name="nome": Flask leggerà questo campo con request.form["nome"] --&gt;</span>
+  <span class="op">&lt;</span><span class="kw">input</span> type=<span class="str">"text"</span> name=<span class="str">"nome"</span> placeholder=<span class="str">"Nome studente"</span> required<span class="op">&gt;</span>
+
+  <span class="cm">&lt;!-- name="voto": Flask leggerà questo campo con request.form["voto"] --&gt;</span>
+  <span class="op">&lt;</span><span class="kw">input</span> type=<span class="str">"number"</span> name=<span class="str">"voto"</span> placeholder=<span class="str">"Voto"</span> min=<span class="str">"1"</span> max=<span class="str">"10"</span> required<span class="op">&gt;</span>
+
+  <span class="cm">&lt;!-- type="submit": questo bottone invia il form --&gt;</span>
+  <span class="op">&lt;</span><span class="kw">button</span> type=<span class="str">"submit"</span><span class="op">&gt;</span>Aggiungi studente<span class="op">&lt;/</span><span class="kw">button</span><span class="op">&gt;</span>
+
+<span class="op">&lt;/</span><span class="kw">form</span><span class="op">&gt;</span></pre>
+    </div>
+
+    <div class="callout blue">
+      <div class="callout-title">📌 Il collegamento con Flask</div>
+      <p>Il valore dell'attributo <span class="inline-code">name</span> nel form HTML e la chiave usata in <span class="inline-code">request.form["..."]</span> in Python <strong>devono essere identici</strong>. Se nel form scrivi <span class="inline-code">name="voto"</span>, in Python devi scrivere <span class="inline-code">request.form["voto"]</span>. Se i nomi non coincidono, Flask non troverà il valore.</p>
+    </div>
+
+    <div class="callout red">
+      <div class="callout-title">⚠️ Attenzione: il form da solo non basta</div>
+      <p>Il form dell'esempio 4 è solo un frammento HTML. Se lo metti in un file e premi "Aggiungi", il browser proverà a inviare i dati alla rotta <span class="inline-code">/aggiungi</span> — ma se Flask non è in esecuzione, o se quella rotta non esiste ancora in <span class="inline-code">app.py</span>, otterrai un errore. Il form funziona solo quando c'è un server Flask attivo con la rotta <span class="inline-code">/aggiungi</span> definita. Nell'esempio 5 della sezione successiva troverai tutto il codice completo e funzionante insieme.</p>
+    </div>
+
+  </section>
+
+  <section class="section" id="database">
+    <div class="section-num">06 / DATABASE</div>
+    <h2>Collegare Flask a SQLite</h2>
+
+    <p>Finalmente mettiamo insieme tutto: Python, Flask, HTML e il database. In questo esempio costruiremo una piccola app per gestire un registro di studenti. L'utente potrà vedere la lista, aggiungere uno studente tramite un form, ed eliminarne uno con un click.</p>
+
+    <h3>Cosa farà l'app</h3>
+    <p>L'app avrà tre funzionalità, ognuna gestita da una rotta diversa:</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <h4>Visualizzare la lista (<span class="inline-code">GET /</span>)</h4>
+          <p>Quando l'utente apre la pagina, Flask legge tutti gli studenti dal database e li mostra in una tabella HTML.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <h4>Aggiungere uno studente (<span class="inline-code">POST /aggiungi</span>)</h4>
+          <p>L'utente compila un form con nome e voto e preme "Aggiungi". Flask riceve i dati e li inserisce nel database con una <span class="inline-code">INSERT</span>.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <h4>Eliminare uno studente (<span class="inline-code">GET /elimina/&lt;id&gt;</span>)</h4>
+          <p>Ogni riga della tabella ha un link "Elimina". Cliccandolo, Flask cancella quello studente dal database con una <span class="inline-code">DELETE</span> e ricarica la pagina.</p>
+        </div>
+      </div>
+    </div>
+
+    <h3>Le nuove funzioni che userai</h3>
+    <p>Rispetto agli esempi precedenti, importeremo tre funzioni nuove da Flask:</p>
+
+    <table>
+      <tr><th>Funzione</th><th>A cosa serve</th></tr>
+      <tr><td><code class="inline-code">request</code></td><td>Legge i dati inviati dall'utente tramite un form (es. il nome e il voto digitati)</td></tr>
+      <tr><td><code class="inline-code">redirect</code></td><td>Dopo aver salvato i dati, rimanda il browser su un'altra pagina (es. torna alla home)</td></tr>
+      <tr><td><code class="inline-code">url_for</code></td><td>Ricava l'URL di una rotta dal nome della sua funzione, così non devi scrivere l'indirizzo a mano</td></tr>
+    </table>
+
+    <p>Oltre a queste, useremo due funzioni Python che scriveremo noi: <span class="inline-code">get_db()</span> per aprire la connessione al database, e <span class="inline-code">init_db()</span> per creare la tabella se non esiste ancora. Le vedremo nel dettaglio direttamente nel codice qui sotto.</p>
+
+    <div class="callout blue">
+      <div class="callout-title">💡 Il flusso completo</div>
+      <p>Utente apre la pagina → Flask legge il DB → passa i dati a <span class="inline-code">render_template</span> → il file HTML mostra la tabella. Quando l'utente invia il form → Flask riceve i dati con <span class="inline-code">request</span> → li salva nel DB → usa <span class="inline-code">redirect</span> per tornare alla home.</p>
+    </div>
+
+    <h3>Esempio 5: registro studenti con database</h3>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(this,'d1')">app.py</button>
+      <button class="tab-btn" onclick="switchTab(this,'d2')">index.html</button>
+    </div>
+
+    <div id="d1" class="tab-content active">
+      <div class="code-wrap">
+        <div class="code-header">
+          <span class="code-lang">python</span>
+          <span class="code-filename">app.py</span>
+        </div>
+        <pre><span class="cm"># Importiamo Flask e le funzioni che ci servono:</span>
+<span class="cm"># - render_template: genera l'HTML da un file .html</span>
+<span class="cm"># - request: legge i dati inviati da un form</span>
+<span class="cm"># - redirect: manda il browser su un'altra pagina</span>
+<span class="cm"># - url_for: ricava l'URL di una funzione dal suo nome</span>
+<span class="kw">from</span> <span class="var">flask</span> <span class="kw">import</span> <span class="fn">Flask</span>, <span class="fn">render_template</span>, <span class="fn">request</span>, <span class="fn">redirect</span>, <span class="fn">url_for</span>
+<span class="kw">import</span> <span class="var">sqlite3</span>
+
+<span class="cm"># Crea l'applicazione Flask</span>
+<span class="var">app</span> <span class="op">=</span> <span class="fn">Flask</span>(<span class="var">__name__</span>)
+
+<span class="cm"># Nome del file database: verrà creato nella stessa cartella di app.py</span>
+<span class="var">DB</span> <span class="op">=</span> <span class="str">"database.db"</span>
+
+
+<span class="cm"># ── get_db: apre la connessione al database ───────────────</span>
+<span class="cm"># La chiamiamo ogni volta che abbiamo bisogno di leggere o scrivere.</span>
+<span class="cm"># row_factory = sqlite3.Row fa sì che ogni riga restituita dalla</span>
+<span class="cm"># query si comporti come un dizionario: possiamo scrivere</span>
+<span class="cm"># riga["nome"] invece di riga[0]</span>
+<span class="kw">def</span> <span class="fn">get_db</span>():
+    <span class="var">conn</span> <span class="op">=</span> <span class="var">sqlite3</span>.<span class="fn">connect</span>(<span class="var">DB</span>)
+    <span class="var">conn</span>.<span class="var">row_factory</span> <span class="op">=</span> <span class="var">sqlite3</span>.<span class="var">Row</span>
+    <span class="kw">return</span> <span class="var">conn</span>
+
+
+<span class="cm"># ── Crea la tabella se non esiste ancora ──────────────────</span>
+<span class="cm"># Viene chiamata una sola volta all'avvio del server (vedi in fondo).</span>
+<span class="cm"># IF NOT EXISTS evita errori se il DB esiste già.</span>
+<span class="kw">def</span> <span class="fn">init_db</span>():
+    <span class="cm"># "with get_db() as conn" apre la connessione al DB e la chiude</span>
+    <span class="cm"># automaticamente alla fine del blocco, salvando le modifiche.</span>
+    <span class="kw">with</span> <span class="fn">get_db</span>() <span class="kw">as</span> <span class="var">conn</span>:
+        <span class="var">conn</span>.<span class="fn">execute</span>(<span class="str">"""
+            CREATE TABLE IF NOT EXISTS studenti (
+                id    INTEGER PRIMARY KEY AUTOINCREMENT,
+                nome  TEXT NOT NULL,
+                voto  INTEGER
+            )
+        """</span>)
+
+
+<span class="cm"># ── Rotta 1: pagina principale ────────────────────────────</span>
+<span class="cm"># Risponde a GET / (es. http://localhost:5000/)</span>
+<span class="cm"># Legge tutti gli studenti dal DB e li passa al template,</span>
+<span class="cm"># che li mostrerà nella tabella HTML.</span>
+<span class="dec">@app.route</span>(<span class="str">"/"</span>)
+<span class="kw">def</span> <span class="fn">home</span>():
+    <span class="kw">with</span> <span class="fn">get_db</span>() <span class="kw">as</span> <span class="var">conn</span>:
+        <span class="var">lista_studenti</span> <span class="op">=</span> <span class="var">conn</span>.<span class="fn">execute</span>(<span class="str">"SELECT * FROM studenti"</span>).<span class="fn">fetchall</span>()
+    <span class="cm"># "studenti" è il nome con cui il template vedrà la variabile,</span>
+    <span class="cm"># "lista_studenti" è la variabile Python definita qui sopra.</span>
+    <span class="kw">return</span> <span class="fn">render_template</span>(<span class="str">"index.html"</span>, <span class="var">studenti</span><span class="op">=</span><span class="var">lista_studenti</span>)
+
+
+<span class="cm"># ── Rotta 2: aggiunge uno studente ────────────────────────</span>
+<span class="cm"># Risponde solo a POST /aggiungi (il form nel template usa method="post").</span>
+<span class="cm"># request.form contiene i valori dei campi del form (nome, voto).</span>
+<span class="cm"># I ? nella query evitano le SQL injection: non concatenare mai</span>
+<span class="cm"># stringhe direttamente nella query!</span>
+<span class="dec">@app.route</span>(<span class="str">"/aggiungi"</span>, <span class="var">methods</span><span class="op">=</span>[<span class="str">"POST"</span>])
+<span class="kw">def</span> <span class="fn">aggiungi</span>():
+    <span class="var">nome</span> <span class="op">=</span> <span class="var">request</span>.<span class="var">form</span>[<span class="str">"nome"</span>]  <span class="cm"># legge il campo "nome" dal form</span>
+    <span class="var">voto</span> <span class="op">=</span> <span class="var">request</span>.<span class="var">form</span>[<span class="str">"voto"</span>]  <span class="cm"># legge il campo "voto" dal form</span>
+    <span class="kw">with</span> <span class="fn">get_db</span>() <span class="kw">as</span> <span class="var">conn</span>:
+        <span class="var">conn</span>.<span class="fn">execute</span>(
+            <span class="str">"INSERT INTO studenti (nome, voto) VALUES (?, ?)"</span>,
+            (<span class="var">nome</span>, <span class="var">voto</span>)  <span class="cm"># i valori reali sostituiscono i ?</span>
+        )
+    <span class="cm"># Dopo l'inserimento rimanda alla home (pattern Post/Redirect/Get):</span>
+    <span class="cm"># evita che il browser reinvii il form se si ricarica la pagina.</span>
+    <span class="kw">return</span> <span class="fn">redirect</span>(<span class="fn">url_for</span>(<span class="str">"home"</span>))
+
+
+<span class="cm"># ── Rotta 3: elimina uno studente ─────────────────────────</span>
+<span class="cm"># &lt;int:id&gt; cattura il numero nell'URL (es. /elimina/3)</span>
+<span class="cm"># e lo passa come parametro alla funzione già convertito in intero.</span>
+<span class="dec">@app.route</span>(<span class="str">"/elimina/&lt;int:id&gt;"</span>)
+<span class="kw">def</span> <span class="fn">elimina</span>(<span class="var">id</span>):
+    <span class="kw">with</span> <span class="fn">get_db</span>() <span class="kw">as</span> <span class="var">conn</span>:
+        <span class="var">conn</span>.<span class="fn">execute</span>(<span class="str">"DELETE FROM studenti WHERE id = ?"</span>, (<span class="var">id</span>,))
+    <span class="kw">return</span> <span class="fn">redirect</span>(<span class="fn">url_for</span>(<span class="str">"home"</span>))
+
+
+<span class="cm"># ── Avvio del server ──────────────────────────────────────</span>
+<span class="cm"># Questo blocco viene eseguito solo quando lanci direttamente</span>
+<span class="cm"># il file (python app.py), non quando viene importato da altri moduli.</span>
+<span class="cm"># init_db() crea la tabella se non esiste, poi si avvia il server.</span>
+<span class="kw">if</span> <span class="var">__name__</span> <span class="op">==</span> <span class="str">"__main__"</span>:
+    <span class="fn">init_db</span>()
+    <span class="var">app</span>.<span class="fn">run</span>(<span class="var">debug</span><span class="op">=</span><span class="kw">True</span>)</pre>
+      </div>
+    </div>
+
+    <div id="d2" class="tab-content">
+      <div class="code-wrap">
+        <div class="code-header">
+          <span class="code-lang">html + jinja2</span>
+          <span class="code-filename">templates/index.html</span>
+        </div>
+        <pre><span class="op">&lt;!</span><span class="kw">DOCTYPE</span> html<span class="op">&gt;</span>
+<span class="op">&lt;</span><span class="kw">html</span> lang=<span class="str">"it"</span><span class="op">&gt;</span>
+<span class="op">&lt;</span><span class="kw">head</span><span class="op">&gt;&lt;</span><span class="kw">meta</span> charset=<span class="str">"UTF-8"</span><span class="op">&gt;&lt;</span><span class="kw">title</span><span class="op">&gt;</span>Studenti<span class="op">&lt;/</span><span class="kw">title</span><span class="op">&gt;&lt;/</span><span class="kw">head</span><span class="op">&gt;</span>
+<span class="op">&lt;</span><span class="kw">body</span><span class="op">&gt;</span>
+  <span class="op">&lt;</span><span class="kw">h1</span><span class="op">&gt;</span>Lista studenti<span class="op">&lt;/</span><span class="kw">h1</span><span class="op">&gt;</span>
+
+  <span class="cm">&lt;!-- Form per aggiungere uno studente --&gt;</span>
+  <span class="op">&lt;</span><span class="kw">form</span> action=<span class="str">"/aggiungi"</span> method=<span class="str">"post"</span><span class="op">&gt;</span>
+    <span class="op">&lt;</span><span class="kw">input</span> type=<span class="str">"text"</span>   name=<span class="str">"nome"</span> placeholder=<span class="str">"Nome"</span> required<span class="op">&gt;</span>
+    <span class="op">&lt;</span><span class="kw">input</span> type=<span class="str">"number"</span> name=<span class="str">"voto"</span> placeholder=<span class="str">"Voto"</span> required<span class="op">&gt;</span>
+    <span class="op">&lt;</span><span class="kw">button</span> type=<span class="str">"submit"</span><span class="op">&gt;</span>Aggiungi<span class="op">&lt;/</span><span class="kw">button</span><span class="op">&gt;</span>
+  <span class="op">&lt;/</span><span class="kw">form</span><span class="op">&gt;</span>
+
+  <span class="cm">&lt;!-- Tabella degli studenti ricevuti da Flask --&gt;</span>
+  <span class="op">&lt;</span><span class="kw">table</span><span class="op">&gt;</span>
+    <span class="op">&lt;</span><span class="kw">tr</span><span class="op">&gt;&lt;</span><span class="kw">th</span><span class="op">&gt;</span>Nome<span class="op">&lt;/</span><span class="kw">th</span><span class="op">&gt;&lt;</span><span class="kw">th</span><span class="op">&gt;</span>Voto<span class="op">&lt;/</span><span class="kw">th</span><span class="op">&gt;&lt;</span><span class="kw">th</span><span class="op">&gt;</span>Azione<span class="op">&lt;/</span><span class="kw">th</span><span class="op">&gt;&lt;/</span><span class="kw">tr</span><span class="op">&gt;</span>
+    {% for s in studenti %}
+    <span class="op">&lt;</span><span class="kw">tr</span><span class="op">&gt;</span>
+      <span class="op">&lt;</span><span class="kw">td</span><span class="op">&gt;</span>{{ s["nome"] }}<span class="op">&lt;/</span><span class="kw">td</span><span class="op">&gt;</span>
+      <span class="op">&lt;</span><span class="kw">td</span><span class="op">&gt;</span>{{ s["voto"] }}<span class="op">&lt;/</span><span class="kw">td</span><span class="op">&gt;</span>
+      <span class="op">&lt;</span><span class="kw">td</span><span class="op">&gt;&lt;</span><span class="kw">a</span> href=<span class="str">"/elimina/{{ s['id'] }}"</span><span class="op">&gt;</span>🗑 Elimina<span class="op">&lt;/</span><span class="kw">a</span><span class="op">&gt;&lt;/</span><span class="kw">td</span><span class="op">&gt;</span>
+    <span class="op">&lt;/</span><span class="kw">tr</span><span class="op">&gt;</span>
+    {% endfor %}
+  <span class="op">&lt;/</span><span class="kw">table</span><span class="op">&gt;</span>
+<span class="op">&lt;/</span><span class="kw">body</span><span class="op">&gt;</span>
+<span class="op">&lt;/</span><span class="kw">html</span><span class="op">&gt;</span></pre>
+      </div>
+    </div>
+
+    <div class="callout">
+      <div class="callout-title">🔒 Sicurezza: parametri con ?</div>
+      <p>Nota l'uso dei <strong>parametri posizionali <span class="inline-code">?</span></strong> nelle query SQL. Non concatenare mai stringhe nelle query (<span class="inline-code">"WHERE id = " + id</span>) perché espone l'app alle <strong>SQL injection</strong>. I <span class="inline-code">?</span> proteggono automaticamente.</p>
+    </div>
+
+    <h3>row_factory: righe come dizionari</h3>
+    <p>Con <span class="inline-code">conn.row_factory = sqlite3.Row</span>, ogni riga restituita dalla query si comporta come un dizionario: puoi accedere ai campi con <span class="inline-code">s["nome"]</span> oppure <span class="inline-code">s.nome</span>. Senza questa riga, le righe sarebbero solo tuple anonime e dovresti usare gli indici numerici (<span class="inline-code">s[1]</span>).</p>
+  </section>
+
+
+  <section class="section" id="progetto">
+    <div class="section-num">07 / ESERCIZI</div>
+    <h2>Esercizi</h2>
+
+    <div class="exercise">
+      <div class="exercise-badge">⚡ Esercizio 1 — Livello base</div>
+      <h4>Registro studenti</h4>
+      <ul>
+        <li>Crea l'app vista in questa lezione: lista di studenti con nome e voto</li>
+        <li>Aggiungi la possibilità di inserire nuovi studenti tramite form</li>
+        <li>Aggiungi un link "Elimina" per ogni riga della tabella</li>
+        <li>Mostra in fondo alla pagina la media dei voti calcolata da Python</li>
+      </ul>
+    </div>
+
+    <div class="exercise">
+      <div class="exercise-badge">🚀 Esercizio 2 — Livello medio</div>
+      <h4>Modifica dei record</h4>
+      <ul>
+        <li>Aggiungi una rotta <span class="inline-code">/modifica/&lt;id&gt;</span> che mostra un form pre-compilato con i dati dello studente</li>
+        <li>Il form invia una richiesta POST che aggiorna il record nel database con <span class="inline-code">UPDATE</span></li>
+        <li>Dopo la modifica, reindirizza alla home con un messaggio di conferma (studia i <em>flash messages</em> di Flask)</li>
+      </ul>
+    </div>
+
+    <h3>Riepilogo: quello che hai imparato</h3>
+    <table>
+      <tr><th>Concetto</th><th>Strumento Flask</th><th>Analogia</th></tr>
+      <tr><td>Collegare URL a funzione</td><td><code class="inline-code">@app.route</code></td><td>Campanello della porta</td></tr>
+      <tr><td>Generare HTML dinamico</td><td><code class="inline-code">render_template</code></td><td>Stampare una lettera da un modello precompilato</td></tr>
+      <tr><td>Ricevere dati da un form</td><td><code class="inline-code">request.form</code></td><td>Leggere un modulo compilato</td></tr>
+      <tr><td>Reindirizzare dopo POST</td><td><code class="inline-code">redirect + url_for</code></td><td>Girare a destra dopo il semaforo</td></tr>
+      <tr><td>Leggere/scrivere dati</td><td><code class="inline-code">sqlite3</code> (già noto!)</td><td>Archivio / schedario</td></tr>
+    </table>
+  </section>
+
+</div>
+
+<footer>
+  Lezione Flask · Quarta Superiore · Informatica &nbsp;·&nbsp; Creata con ❤️ per gli studenti
+</footer>
+
+<script>
+  // Progress bar
+  window.addEventListener('scroll', () => {
+    const el = document.getElementById('progress');
+    const h = document.documentElement;
+    const pct = (h.scrollTop / (h.scrollHeight - h.clientHeight)) * 100;
+    el.style.width = pct + '%';
+  });
+
+  // Tabs
+  function switchTab(btn, id) {
+    btn.parentElement.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    // find sibling tab contents
+    let el = btn.parentElement.nextElementSibling;
+    while (el && (el.classList.contains('tab-content'))) {
+      el.classList.remove('active');
+      el = el.nextElementSibling;
+    }
+    document.getElementById(id).classList.add('active');
+  }
+</script>
+</body>
+</html>
